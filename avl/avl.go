@@ -1,4 +1,6 @@
-package avl
+package main
+
+import "fmt"
 
 type AVLTree struct {
 	root *AVLNode
@@ -22,18 +24,36 @@ func NewAVLTree() *AVLTree {
 	}
 }
 
+func (a *AVLTree) PreOrderTraverse() {
+	preOrderTraverse(a.root)
+}
+
+func preOrderTraverse(node *AVLNode) {
+	if node == nil {
+		return
+	}
+	fmt.Println(node.key)
+	preOrderTraverse(node.left)
+	preOrderTraverse(node.right)
+}
+
 func (a *AVLTree) Insert(key int, val interface{}) *AVLNode {
 	return a.root.insert(key, val)
 }
 
-func (a *AVLTree) Delete(key int) {}
-
-func (a *AVLTree) Update(oldKey, newKey int, newVal interface{}) {
-
+func (a *AVLTree) Delete(key int) {
+	a.root.delete(key)
 }
 
-func (a *AVLTree) Select(key int) *AVLNode {
+func (a *AVLTree) Update(oldKey, newKey int, newVal interface{}) {
+	root := a.root.search(oldKey)
+	root.key = newKey
+	root.val = newVal
+	root.rebalance()
+}
 
+func (a *AVLTree) Search(key int) *AVLNode {
+	return a.root.search(key)
 }
 
 func (n *AVLNode) insert(key int, val interface{}) *AVLNode {
@@ -50,21 +70,21 @@ func (n *AVLNode) insert(key int, val interface{}) *AVLNode {
 	return n.rebalance() // 平衡
 }
 
-func (n *AVLNode) getHeight() int {
+func (n *AVLNode) Height() int {
 	if n == nil {
 		return 0
 	}
 	return n.height
 }
-
-func (n *AVLNode) recalcHeight() {
-	n.height = max(n.left.getHeight(), n.right.getHeight()) + 1
-}
 func (n *AVLNode) getBalanceFactor() int {
 	if n == nil {
 		return 0
 	}
-	return n.left.getHeight() - n.right.getHeight()
+	return n.left.Height() - n.right.Height()
+}
+
+func (n *AVLNode) recalcHeight() {
+	n.height = max(n.left.Height(), n.right.Height()) + 1
 }
 
 func (n *AVLNode) rebalance() *AVLNode {
@@ -72,6 +92,7 @@ func (n *AVLNode) rebalance() *AVLNode {
 	if nil == root {
 		return nil
 	}
+	root.recalcHeight()
 	balanceFactor := root.getBalanceFactor()
 	// LL
 	if balanceFactor > 1 && root.left.getBalanceFactor() > 0 {
@@ -136,7 +157,10 @@ func (n *AVLNode) delete(key int) {
 	}
 	if n.key == key {
 		if n.left != nil && n.right != nil {
-			// 可以从左子树查 也可以从右子树查最小的 or 最大的
+			greatestNode := n.left.biggest()
+			n.key = greatestNode.key
+			n.val = greatestNode.val
+			n.left.delete(greatestNode.key)
 
 		} else if n.left != nil && n.right == nil {
 			n = n.left
@@ -154,10 +178,27 @@ func (n *AVLNode) delete(key int) {
 	n.rebalance() // 再次平衡
 }
 
+func (n *AVLNode) biggest() *AVLNode {
+	root := n
+	if root.right != nil {
+		return root.right.biggest()
+	} else {
+		return root
+	}
+}
+
+func (n *AVLNode) smallest() *AVLNode {
+	root := n
+	if root.left != nil {
+		return root.left.smallest()
+	} else {
+		return root
+	}
+}
+
 func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
-
